@@ -127,8 +127,7 @@ def gen(b, s, e, cast, caps=0):
             f1 = i + d
             if not caps and b[f1] == ".":
                 if f1 // 10 - 2 == pr8:
-                    for q in "qrbn":
-                        out.append((i, f1, q))
+                    out.append((i, f1, "q"))
                 else:
                     out.append((i, f1, ""))
                     if i // 10 - 2 == (1 if up else 6) and b[i + 2 * d] == ".":
@@ -143,8 +142,7 @@ def gen(b, s, e, cast, caps=0):
                 if tg == "." and g != e:
                     continue
                 if g // 10 - 2 == pr8:
-                    for q in "qrbn":
-                        out.append((i, g, q))
+                    out.append((i, g, "q"))
                 else:
                     out.append((i, g, ""))
         else:
@@ -282,34 +280,45 @@ class C(Exception):
 
 N = [0]
 H = {}
+PZ = set()
 
 
 def qs(b, u, e, a, be, h, s, k):
     N[0] += 1
     if N[0] > BD:
         raise C()
+    if h in PZ:
+        return 0
     ku = k[0] if u else k[1]
     ko = k[1] if u else k[0]
-    st = s if u else -s
-    if st >= be:
-        return st
-    if st > a:
-        a = st
-    for sc, i, g, pr in od(b, gen(b, "w" if u else "b", e, "KQkq", 1)):
+    ck = atk(b, ku, not u)
+    if ck:
+        st = -M
+    else:
+        st = s if u else -s
+        if st >= be:
+            return st
+        if st > a:
+            a = st
+    am = 0
+    for sc, i, g, pr in od(b, gen(b, "w" if u else "b", e, "KQkq", 0 if ck else 1)):
         v = b[g]
-        if not pr and st + (VL[v.upper()] if v != "." else 0) + 120 < a:
+        if not ck and not pr and st + (VL[v.upper()] if v != "." else 0) + 120 < a:
             continue
         m = (i, g, pr)
         nb, h2, s2 = ap(b, m, h, s)
         ku2 = g if b[i].upper() == "K" else ku
         if atk(nb, ku2, not u):
             continue
+        am = 1
         r = -qs(nb, not u, ne(b, m), -be, -a, h2 ^ TH, s2,
                 (ku2, ko) if u else (ko, ku2))
         if r >= be:
             return r
         if r > a:
             a = r
+    if ck and not am:
+        return -M
     return a
 
 
@@ -317,6 +326,8 @@ def sr(b, u, e, d, a, be, h, s, ply, k, km=None):
     N[0] += 1
     if N[0] > BD:
         raise C()
+    if h in PZ:
+        return 0
     t = H.get(h)
     if t is not None and km is None:
         km = t[2]
@@ -385,6 +396,7 @@ def think(b, s, cast, e, legal):
         if p != "." and p != "#":
             h ^= Z[p][i]
     sc = ev(b)
+    PZ.add(h)
     if len(H) > 300000:
         H.clear()
     best = None
@@ -399,6 +411,7 @@ def think(b, s, cast, e, legal):
         best = m
     if best is None:
         return legal[0] if legal else None
+    PZ.add(ap(b, best, h, sc)[1] ^ TH)
     u1 = nm(best[0]) + nm(best[1]) + best[2]
     return u1 if u1 in legal else legal[0]
 
@@ -423,10 +436,14 @@ def post(url, path, body):
 
 def main():
     url = os.environ.get("MAKEFUN_ENV_URL") or sys.exit("MAKEFUN_ENV_URL unset")
+    G = None
     while True:
         g = post(url, "/game", {})
         if g["status"] == "done":
             break
+        if g["game"] != G:
+            G = g["game"]
+            PZ.clear()
         while g["status"] == "your_move":
             b, side, cast, ep = parse(g["fen"])
             mv = think(b, side, cast, ep, g["legal_moves"])
