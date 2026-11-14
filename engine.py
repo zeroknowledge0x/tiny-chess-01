@@ -38,7 +38,7 @@ KG = [-40, -50, -50, -60, -60, -50, -50, -40,
       10, 10, -10, -20, -20, -10, 10, 10,
       15, 35, 10, 0, 0, 10, 35, 15]
 TA = {"P": PA, "N": KN, "K": KG}
-BD = int(os.environ.get("TCE_NODES") or 48000)
+BD = int(os.environ.get("TCE_NODES") or 32000)
 M = 30000
 
 
@@ -89,6 +89,9 @@ def nm(i):
     return FN[i % 10 - 1] + str(i // 10 - 1)
 
 
+SF = [i for i in range(21, 99) if on(i)]
+
+
 def parse(fen):
     b = ["#"] * 120
     for r in range(8):
@@ -114,9 +117,9 @@ def gen(b, s, e, cast, caps=0):
     out = []
     up = s == "w"
     pr8 = 7 if up else 0
-    for i in range(21, 99):
+    for i in SF:
         pc = b[i]
-        if pc == "." or pc == "#" or up != pc.isupper():
+        if pc == "." or up != pc.isupper():
             continue
         t = pc.upper()
         if t == "P":
@@ -163,14 +166,14 @@ def gen(b, s, e, cast, caps=0):
                     break
         if t == "K" and not caps:
             if up:
-                if "K" in cast and b[26] == "." and b[27] == "." and b[25] == "K" and b[28] == "R":
+                if "K" in cast and b[26] == "." and b[27] == "." and b[25] == "K" and b[28] == "R" and not atk(b, 25, 0) and not atk(b, 26, 0):
                     out.append((25, 27, ""))
-                if "Q" in cast and b[24] == "." and b[23] == "." and b[22] == "." and b[25] == "K" and b[21] == "R":
+                if "Q" in cast and b[24] == "." and b[23] == "." and b[22] == "." and b[25] == "K" and b[21] == "R" and not atk(b, 25, 0) and not atk(b, 24, 0):
                     out.append((25, 23, ""))
             else:
-                if "k" in cast and b[96] == "." and b[97] == "." and b[95] == "k" and b[98] == "r":
+                if "k" in cast and b[96] == "." and b[97] == "." and b[95] == "k" and b[98] == "r" and not atk(b, 95, 1) and not atk(b, 96, 1):
                     out.append((95, 97, ""))
-                if "q" in cast and b[94] == "." and b[93] == "." and b[92] == "." and b[95] == "k" and b[91] == "r":
+                if "q" in cast and b[94] == "." and b[93] == "." and b[92] == "." and b[95] == "k" and b[91] == "r" and not atk(b, 95, 1) and not atk(b, 94, 1):
                     out.append((95, 93, ""))
     return out
 
@@ -292,7 +295,7 @@ def qs(b, u, e, a, be, h, s, k):
         return st
     if st > a:
         a = st
-    for sc, i, g, pr in od(b, gen(b, "w" if u else "b", e, "-", 1)):
+    for sc, i, g, pr in od(b, gen(b, "w" if u else "b", e, "KQkq", 1)):
         v = b[g]
         if not pr and st + (VL[v.upper()] if v != "." else 0) + 120 < a:
             continue
@@ -325,7 +328,7 @@ def sr(b, u, e, d, a, be, h, s, ply, k, km=None):
     bv = -M - 1
     bm = km
     am = 0
-    for sc, i, g, pr in od(b, gen(b, "w" if u else "b", e, "-"), km):
+    for sc, i, g, pr in od(b, gen(b, "w" if u else "b", e, "KQkq"), km):
         m = (i, g, pr)
         nb, h2, s2 = ap(b, m, h, s)
         ku2 = g if b[i].upper() == "K" else ku
