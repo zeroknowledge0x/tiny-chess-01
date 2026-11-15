@@ -12,15 +12,16 @@ scratch (no third-party engine code).
   transposition table used for move ordering, and a material plus piece-square
   evaluation (bishop, rook and queen tables derived from the knight table at import,
   so every piece has one).
-- Evaluation fix, measured on practice trial 0 with the sealed scorer: the
-  piece-square tables are written with the first row on rank 8, but the import loop
-  indexed them with `(7 - rank)`, so every table was applied vertically inverted. A
-  white pawn on its own second rank scored the same as one a step from promotion
-  (+50), and a white king was valued 60 centipawns SAFER on the enemy back rank than
-  on e1. Correcting the index to `rank` (a four-byte deletion) took the trial from
-  1 win 1 draw 4 losses (Elo 997) to 1 win 2 draws 3 losses (Elo 1099), no time loss.
-  Knight, bishop, rook and queen tables are vertically symmetric, so only the pawn
-  and king tables were affected.
+- Evaluation correctness fix: the piece-square tables are written with the first row
+  on rank 8, but the import loop indexed them with `(7 - rank)`, so every table was
+  applied vertically inverted. A white pawn on its own second rank scored the same as
+  one a step from promotion (+50), and the king was valued 60 centipawns SAFER on the
+  enemy back rank than on e1. Knight, bishop, rook and queen tables are vertically
+  symmetric, so only the pawn and king tables were affected. Correcting the index
+  (a four-byte deletion) is Elo-neutral on practice trial 0, measured in one session
+  against the pre-fix build on separate ports: 1 win 2 draws 3 losses against 2 wins
+  4 losses, both 2.0 points and both Elo 1099. It is kept as a correctness fix, not
+  as a strength claim.
 - Measured and rejected as neutral or worse, all at the fixed 32,000-node budget: a
   depth-covering transposition-table cutoff (0 of 6 on trial 0 against 1 win 1 draw 4
   losses, because a stored score that is only a bound was returned as exact); the same
