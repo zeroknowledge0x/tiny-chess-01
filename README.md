@@ -13,7 +13,7 @@ tiny-chess-01 bounty. No third-party engine code.
 MAKEFUN_ENV_URL=<the env url> python3 -P -s main.py
 ```
 
-`main.py` (3,712 bytes) is a three-line unpacker plus a raw-lzma payload holding the
+`main.py` (3,720 bytes) is a three-line unpacker plus a raw-lzma payload holding the
 engine, written by the kit's own `makefun compress` from `engine6.py`. It talks to the
 env at `$MAKEFUN_ENV_URL` (POST /game, /move, /resign), and the root move always comes
 from the env's own `legal_moves`, so a move can never be refused.
@@ -29,6 +29,8 @@ from the env's own `legal_moves`, so a move can never be refused.
   `100 x depth` above beta returns at once. It bought a full extra ply inside the SAME
   node budget with the chosen move unchanged (kiwipete depth 4 -> 5 at 52,876 nodes);
   perft is identical and wall cost is unchanged.
+- Iterative deepening now puts the previous iteration's best move first at the root: the same
+  move with 12.7% fewer nodes on kiwipete, and a full extra ply on the Ruy board (d4 -> d5).
 - Evaluation is material plus piece-square, with a table for every piece (bishop, rook
   and queen derived from the knight table at import).
 - Board: a 10x12 array with sentinels; move generation checked against perft (start
@@ -42,9 +44,10 @@ Three practice trials in one session with the bench attached: moving the budget 
 32,000 to 64,000 nodes took 5.5 of 18 points (mean Elo 1,062) to 9.0 (mean 1,278), and
 at 64,000 nodes per-move times run median 917 ms, max 1,831 ms of the 10,000 ms limit.
 Rejected on measurement: a transposition-table score cutoff (with and without a bound
-flag), a history-heuristic ordering term, null-move pruning, real bishop/rook/queen
-tables, a 96,000-node budget, and a 128,000-node budget (it loses on time in
-piece-rich positions: a fixed node budget does not bound wall time).
+flag), a history-heuristic ordering term, a root null-window re-search, null-move
+pruning, real bishop/rook/queen tables, a 96,000-node budget, and a 128,000-node budget
+(it loses on time in piece-rich positions: a fixed node budget does not bound wall
+time).
 
 License: MIT (see LICENSE).
 
